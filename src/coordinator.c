@@ -137,6 +137,7 @@ int main(int argc, char *argv[]) {
         sprintf(start_str, "%lld", start_index);
         sprintf(end_str, "%lld", end_index);
         // TODO 4: Usar fork() para criar processo filho
+        pid_t pid = fork();
         // TODO 5: No processo pai: armazenar PID
         // TODO 6: No processo filho: usar execl() para executar worker
         // TODO 7: Tratar erros de fork() e execl()
