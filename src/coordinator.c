@@ -128,8 +128,14 @@ int main(int argc, char *argv[]) {
     
     // IMPLEMENTE AQUI: Loop para criar workers
     for (int i = 0; i < num_workers; i++) {
-        // TODO: Calcular intervalo de senhas para este worker
+        // TODO: Calcular intervalo de senhas para este worker 
         // TODO: Converter indices para senhas de inicio e fim
+        long long start_index = (total_space * i) / num_workers;
+        long long end_index   = (total_space * (i + 1)) / num_workers;
+
+        char start_str[32], end_str[32];
+        sprintf(start_str, "%lld", start_index);
+        sprintf(end_str, "%lld", end_index);
         // TODO 4: Usar fork() para criar processo filho
         // TODO 5: No processo pai: armazenar PID
         // TODO 6: No processo filho: usar execl() para executar worker
