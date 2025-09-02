@@ -95,6 +95,31 @@ void save_result(int worker_id, const char *password) {
     // - Tentar abrir arquivo com O_CREAT | O_EXCL | O_WRONLY
     // - Se sucesso: escrever resultado e fechar
     // - Se falhou: outro worker já encontrou
+
+    const char *filename = "result.txt"//criar o arquivo
+
+    int abrir = open(filename, O_CREAT | O_EXCL | O_WRONLY, 0644);//abrindo o arquivo de maneira "atomica"
+
+    if(abrir == -1){  
+        if(errno == EEXIST){
+            printf("Já existe outro worker e ele ja leu o resultado");
+            
+        }
+        else{
+            printf("Erro ao abrir o arquivo");
+        }
+        return;//so para fechar a função
+    } // esse if acontece caso o arquivo nao consiga abrir o arquivo criado ou ja exista um arquivo com esse nome 
+    char resultado[256];
+    sprintf(result, "%d:%s \n", worker_id, password);
+
+    if( write(fd, result, strlen(result)) == -1){
+        printf("Erro ao escrever no arquivo: %s\n", strerror(errno));
+        close(abrir);
+        return//somente para fechar
+    }//mensagem de erro, caso nao consiga escrever o arquivo
+    close(abrir);
+    printf("arquivo escrito com sucesso \n");
 }
 
 /**
