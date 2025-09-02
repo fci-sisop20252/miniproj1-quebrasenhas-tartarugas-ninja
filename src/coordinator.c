@@ -138,9 +138,21 @@ int main(int argc, char *argv[]) {
         sprintf(end_str, "%lld", end_index);
         // TODO 4: Usar fork() para criar processo filho
         pid_t pid = fork();
+        if(pid > 0){
         // TODO 5: No processo pai: armazenar PID
+        workers[i] = pid;
+        }
+        else if(pid == 0){
         // TODO 6: No processo filho: usar execl() para executar worker
+        execl("./worker", "worker", target_hash, start_str, end_str, charset, 
+          argv[2], worker_id_str, NULL);
+        printf("DEBUG: Se chegou aqui, execl falhou!\n");
+        }
+        else{
         // TODO 7: Tratar erros de fork() e execl()
+        perror("Erro ao criar processo (fork)");
+        exit(1);
+        }
     }
     
     printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");
@@ -154,7 +166,23 @@ int main(int argc, char *argv[]) {
     // - Identificar qual worker terminou
     // - Verificar se terminou normalmente ou com erro
     // - Contar quantos workers terminaram
-    
+    for (int i = 0; i < num_workers; i++) {
+        int status;
+        pid_t child_pid = wait(&status);
+
+        if (child_pid > 0) {
+            printf("Filho %d terminou\n", child_pid);
+            
+            // Analisar o status de saída
+            if (WIFEXITED(status)) {
+                int exit_code = WEXITSTATUS(status);
+                printf("Código de saída: %d\n", exit_code);
+            }
+            else{
+                printf("Worker com PID %d terminou de forma anormal.\n", child_pid);
+            }
+        }
+    }
     // Registrar tempo de fim
     time_t end_time = time(NULL);
     double elapsed_time = difftime(end_time, start_time);
@@ -173,6 +201,33 @@ int main(int argc, char *argv[]) {
     
     // Estatísticas finais (opcional)
     // TODO: Calcular e exibir estatísticas de performance
+    FILE *fp = fopen(RESULT_FILE, "r");
+    if (fp != NULL) {
+        char line[256];
+        if (fgets(line, sizeof(line), fp)) {
+            int worker_id;
+            char password[64];
+
+            if (sscanf(line, "%d:%63s", &worker_id, password) == 2) {
+                char hash_check[33];
+                md5_string(password, hash_check);
+
+                if (strcmp(hash_check, target_hash) == 0) {
+                    printf("Senha encontrada pelo worker %d: %s\n", worker_id, password);
+                } else {
+                    printf("Senha lida no arquivo não corresponde ao hash.\n");
+                }
+            } else {
+                printf("Formato inválido no arquivo de resultado.\n");
+            }
+        } else {
+            printf("Arquivo de resultado vazio.\n");
+        }
+        fclose(fp);
+    } else {
+        printf("Senha não foi encontrada por nenhum worker.\n");
+    }
+    
     
     return 0;
 }
