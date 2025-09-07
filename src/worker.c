@@ -95,31 +95,32 @@ void save_result(int worker_id, const char *password) {
     // - Tentar abrir arquivo com O_CREAT | O_EXCL | O_WRONLY
     // - Se sucesso: escrever resultado e fechar
     // - Se falhou: outro worker já encontrou
+    const char *filename = RESULT_FILE;
 
-    const char *filename = "result.txt"//criar o arquivo
+    
+    int abrir = open(filename, O_CREAT | O_EXCL | O_WRONLY, 0644);
 
-    int abrir = open(filename, O_CREAT | O_EXCL | O_WRONLY, 0644);//abrindo o arquivo de maneira "atomica"
-
-    if(abrir == -1){  
-        if(errno == EEXIST){
-            printf("Já existe outro worker e ele ja leu o resultado");
-            
+    if (abrir == -1) {
+        if (errno == EEXIST) {
+            // Outro worker já gravou
+            printf("[Worker %d] Resultado já encontrado por outro worker.\n", worker_id);
+        } else {
+            perror("[Worker] Erro ao criar arquivo de resultado");
         }
-        else{
-            printf("Erro ao abrir o arquivo");
-        }
-        return;//so para fechar a função
-    } // esse if acontece caso o arquivo nao consiga abrir o arquivo criado ou ja exista um arquivo com esse nome 
+        return;
+    }
+
     char resultado[256];
-    sprintf(result, "%d:%s \n", worker_id, password);
+    sprintf(resultado, "%d:%s\n", worker_id, password);
 
-    if( write(fd, result, strlen(result)) == -1){
-        printf("Erro ao escrever no arquivo: %s\n", strerror(errno));
+    if (write(abrir, resultado, strlen(resultado)) == -1) {
+        printf("Erro ao escrever no arquivo.\n");
         close(abrir);
-        return//somente para fechar
-    }//mensagem de erro, caso nao consiga escrever o arquivo
+        return;
+    }
+
     close(abrir);
-    printf("arquivo escrito com sucesso \n");
+    printf("Arquivo escrito com sucesso.\n");
 }
 
 /**
@@ -159,18 +160,36 @@ int main(int argc, char *argv[]) {
     while (1) {
         // TODO 3: Verificar periodicamente se outro worker já encontrou a senha
         // DICA: A cada PROGRESS_INTERVAL senhas, verificar se arquivo resultado existe
+        if (passwords_checked % PROGRESS_INTERVAL == 0) {
+            if (check_result_exists()) {
+            printf("[Worker %d] outro worker já encontrou a senha.\n", worker_id);
+            break; 
+        }
+
         
         // TODO 4: Calcular o hash MD5 da senha atual
         // IMPORTANTE: Use a biblioteca MD5 FORNECIDA - md5_string(senha, hash_buffer)
+        md5_string(current_password, computed_hash);
         
         // TODO 5: Comparar com o hash alvo
         // Se encontrou: salvar resultado e terminar
+        if(strcmp(computed_hash, target_hash) == 0){
+            printf("[Worker %d] Senha encontrada: %s\n", worker_id, current_password);
+            save_result(worker_id, current_password);
+            break;
+        }
         
         // TODO 6: Incrementar para a próxima senha
         // DICA: Use a função increment_password implementada acima
+        if(!increment_password(current_password, charset, charset_len, password_len)){
+            break;
+        }
         
         // TODO: Verificar se chegou ao fim do intervalo
         // Se sim: terminar loop
+        if (password_compare(current_password, end_password) > 0) {
+            break;
+        }
         
         passwords_checked++;
     }
