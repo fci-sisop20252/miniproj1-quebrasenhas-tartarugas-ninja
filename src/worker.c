@@ -100,15 +100,12 @@ void save_result(int worker_id, const char *password) {
     
     int abrir = open(filename, O_CREAT | O_EXCL | O_WRONLY, 0644);
 
+
     if (abrir == -1) {
-        if (errno == EEXIST) {
-            // Outro worker já gravou
-            printf("[Worker %d] Resultado já encontrado por outro worker.\n", worker_id);
-        } else {
-            perror("[Worker] Erro ao criar arquivo de resultado");
-        }
+        printf("Outro worker já encontrou o resultado ou erro ao criar o arquivo.\n"); 
         return;
     }
+
 
     char resultado[256];
     sprintf(resultado, "%d:%s\n", worker_id, password);
@@ -192,6 +189,7 @@ int main(int argc, char *argv[]) {
         }
         
         passwords_checked++;
+        }
     }
     
     // Estatísticas finais

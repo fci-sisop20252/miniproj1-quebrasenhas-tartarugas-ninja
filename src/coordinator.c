@@ -143,10 +143,12 @@ int main(int argc, char *argv[]) {
         workers[i] = pid;
         }
         else if(pid == 0){
+            char worker_id_str[16];
+            sprintf(worker_id_str, "%d", i);
         // TODO 6: No processo filho: usar execl() para executar worker
-        execl("./worker", "worker", target_hash, start_str, end_str, charset, 
-          argv[2], worker_id_str, NULL);
-        printf("DEBUG: Se chegou aqui, execl falhou!\n");
+            execl("./worker", "worker", target_hash, start_str, end_str, charset, 
+            argv[2], worker_id_str, NULL);
+            printf("DEBUG: Se chegou aqui, execl falhou!\n");
         }
         else{
         // TODO 7: Tratar erros de fork() e execl()
