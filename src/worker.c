@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
         // TODO 4: Calcular o hash MD5 da senha atual
         // IMPORTANTE: Use a biblioteca MD5 FORNECIDA - md5_string(senha, hash_buffer)
         md5_string(current_password, computed_hash);
-        // passwords_checked++;
+        passwords_checked++;
 
         // TODO 5: Comparar com o hash alvo
         // Se encontrou: salvar resultado e terminar
