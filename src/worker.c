@@ -159,15 +159,17 @@ int main(int argc, char *argv[]) {
         // DICA: A cada PROGRESS_INTERVAL senhas, verificar se arquivo resultado existe
         if (passwords_checked % PROGRESS_INTERVAL == 0) {
             if (check_result_exists()) {
-            printf("[Worker %d] outro worker já encontrou a senha.\n", worker_id);
-            break; 
+                printf("[Worker %d] outro worker já encontrou a senha.\n", worker_id);
+                break;
+            }
         }
 
         
         // TODO 4: Calcular o hash MD5 da senha atual
         // IMPORTANTE: Use a biblioteca MD5 FORNECIDA - md5_string(senha, hash_buffer)
         md5_string(current_password, computed_hash);
-        
+        // passwords_checked++;
+
         // TODO 5: Comparar com o hash alvo
         // Se encontrou: salvar resultado e terminar
         if(strcmp(computed_hash, target_hash) == 0){
@@ -187,9 +189,8 @@ int main(int argc, char *argv[]) {
         if (password_compare(current_password, end_password) > 0) {
             break;
         }
-        
         passwords_checked++;
-        }
+    
     }
     
     // Estatísticas finais
