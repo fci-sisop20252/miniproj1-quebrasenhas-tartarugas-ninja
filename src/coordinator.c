@@ -132,8 +132,15 @@ int main(int argc, char *argv[]) {
         // TODO: Converter indices para senhas de inicio e fim
         long long block_size = passwords_per_worker + (i < remaining ? 1 : 0);
 
+        if (block_size == 0) {
+            workers[i] = -1;
+            continue;
+        }
         long long start_index = current_start;
         long long end_index   = start_index + block_size;
+
+        if (start_index < 0) start_index = 0;
+        if (end_index >= total_space) end_index = total_space - 1;
 
         char start_str[32], end_str[32];
         index_to_password(start_index, charset, charset_len, password_len, start_str);
@@ -155,8 +162,12 @@ int main(int argc, char *argv[]) {
         else{
         // TODO 7: Tratar erros de fork() e execl()
         perror("Erro ao criar processo (fork)");
+        for (int j = 0; j < i; j++) {
+            if (workers[j] > 0) waitpid(workers[j], NULL, 0);
+        }
         exit(1);
         }
+        current_start = end_index + 1;
     }
     
     printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");
@@ -170,11 +181,15 @@ int main(int argc, char *argv[]) {
     // - Identificar qual worker terminou
     // - Verificar se terminou normalmente ou com erro
     // - Contar quantos workers terminaram
-    for (int i = 0; i < num_workers; i++) {
+    int remaining_children = 0;
+    for(int i = 0;i<num_workers;i++) if (workers[i]>0) remaining_children++;
+
+    while(remaining_children>0) {
         int status;
         pid_t child_pid = wait(&status);
 
         if (child_pid > 0) {
+            remaining_children--;
             printf("Filho %d terminou\n", child_pid);
             
             // Analisar o status de saída
@@ -185,6 +200,8 @@ int main(int argc, char *argv[]) {
             else{
                 printf("Worker com PID %d terminou de forma anormal.\n", child_pid);
             }
+        } else {
+            break;
         }
     }
     // Registrar tempo de fim
@@ -232,6 +249,6 @@ int main(int argc, char *argv[]) {
         printf("Senha não foi encontrada por nenhum worker.\n");
     }
     
-    
+    printf("Tempo total: %.2f segundos\n", elapsed_time);
     return 0;
 }

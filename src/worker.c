@@ -99,7 +99,7 @@ void save_result(int worker_id, const char *password) {
 
     
     int abrir = open(filename, O_CREAT | O_EXCL | O_WRONLY, 0644);
-
+    
 
     if (abrir == -1) {
         printf("Outro worker já encontrou o resultado ou erro ao criar o arquivo.\n"); 
@@ -110,12 +110,7 @@ void save_result(int worker_id, const char *password) {
     char resultado[256];
     sprintf(resultado, "%d:%s\n", worker_id, password);
 
-    if (write(abrir, resultado, strlen(resultado)) == -1) {
-        printf("Erro ao escrever no arquivo.\n");
-        close(abrir);
-        return;
-    }
-
+    write(abrir, resultado, strlen(resultado));
     close(abrir);
     printf("Arquivo escrito com sucesso.\n");
 }
@@ -143,15 +138,19 @@ int main(int argc, char *argv[]) {
     
     // Buffer para a senha atual
     char current_password[11];
-    strcpy(current_password, start_password);
-    
+    strncpy(current_password, start_password, sizeof(current_password) - 1);
+    current_password[password_len] = '\0';
+
     // Buffer para o hash calculado
     char computed_hash[33];
     
     // Contadores para estatísticas
     long long passwords_checked = 0;
     time_t start_time = time(NULL);
-    time_t last_progress_time = start_time;
+    if (password_compare(current_password, end_password) > 0) {
+        printf("[Worker %d] intervalo vazio (start > end). Saindo.\n", worker_id);
+        return 0;
+    }
     
     // Loop principal de verificação
     while (1) {
@@ -179,17 +178,17 @@ int main(int argc, char *argv[]) {
         }
         
         // TODO 6: Incrementar para a próxima senha
-        // DICA: Use a função increment_password implementada acima
-        if(!increment_password(current_password, charset, charset_len, password_len)){
+        if (password_compare(current_password, end_password) >= 0) {
             break;
         }
         
+        
         // TODO: Verificar se chegou ao fim do intervalo
         // Se sim: terminar loop
-        if (password_compare(current_password, end_password) > 0) {
+        if (!increment_password(current_password, charset, charset_len, password_len)) {
+            
             break;
         }
-        passwords_checked++;
     
     }
     
